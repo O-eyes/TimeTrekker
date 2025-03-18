@@ -5,13 +5,17 @@ import {
   Quest, 
   Message, 
   Anomaly,
-  Location
+  Location,
+  Artifact,
+  PlayerSkills,
+  Inventory,
+  NPC
 } from '@/types/game';
 import TimePeriodSidebar from './TimePeriodSidebar';
 import TimeNexusHub from './TimeNexusHub';
 import HistoricalEra from './HistoricalEra';
 import MessageLog from './MessageLog';
-import { Clock } from 'lucide-react';
+import { Clock, Briefcase, Users } from 'lucide-react';
 
 // Initial time periods data
 const initialTimePeriods: TimePeriod[] = [
@@ -239,6 +243,21 @@ const TimeNexus = () => {
   const [artifactsCollected, setArtifactsCollected] = useState<number>(0);
   const [factionStanding, setFactionStanding] = useState<string>('Neutral');
   const [overallIntegrity, setOverallIntegrity] = useState<number>(78);
+  
+  // New state for enhanced features
+  const [activeNPC, setActiveNPC] = useState<NPC | null>(null);
+  const [inventory, setInventory] = useState<Inventory>({
+    artifacts: [],
+    capacity: 10
+  });
+  const [playerSkills, setPlayerSkills] = useState<PlayerSkills>({
+    temporal_manipulation: 1,
+    historical_knowledge: 1,
+    combat_prowess: 1,
+    artifact_analysis: 1,
+    diplomacy: 1
+  });
+  const [showInventory, setShowInventory] = useState<boolean>(false);
 
   // Helper function to format timestamps
   function formatTimestamp(date: Date): string {
@@ -308,17 +327,89 @@ const TimeNexus = () => {
     addMessage(`New quest received: ${newQuest.name}`, 'quest');
   }, [timePeriods, addMessage]);
 
-  // Generate a random reward
+  // Generate a random artifact reward
   const generateReward = () => {
-    const rewards = [
-      'Temporal Artifact: Hourglass of Thoth',
-      'Temporal Artifact: Chronometer Compass',
-      'Temporal Artifact: Paradox Prism',
-      'Temporal Artifact: Time-Weaver\'s Thread',
-      'Temporal Artifact: Quantum Chalice'
+    const artifacts = [
+      {
+        name: 'Hourglass of Thoth',
+        type: 'relic',
+        rarity: 'rare',
+        eraOrigin: 'egypt'
+      },
+      {
+        name: 'Chronometer Compass',
+        type: 'tool', 
+        rarity: 'uncommon',
+        eraOrigin: 'industrial'
+      },
+      {
+        name: 'Paradox Prism',
+        type: 'paradox',
+        rarity: 'legendary',
+        eraOrigin: 'nexus'
+      },
+      {
+        name: 'Time-Weaver\'s Thread',
+        type: 'tech',
+        rarity: 'rare',
+        eraOrigin: 'rome'
+      },
+      {
+        name: 'Quantum Chalice',
+        type: 'relic',
+        rarity: 'rare',
+        eraOrigin: 'medieval'
+      }
     ];
-    return rewards[Math.floor(Math.random() * rewards.length)];
+    
+    const selected = artifacts[Math.floor(Math.random() * artifacts.length)];
+    return `Temporal Artifact: ${selected.name}`;
   };
+  
+  // Add artifact to player inventory
+  const addArtifactToInventory = useCallback((artifactName: string) => {
+    if (inventory.artifacts.length >= inventory.capacity) {
+      addMessage('Your inventory is full. Consider examining some artifacts at the Nexus.', 'warning');
+      return false;
+    }
+    
+    // Extract the actual name from the string format "Temporal Artifact: Name"
+    const name = artifactName.replace('Temporal Artifact: ', '');
+    
+    // Create new artifact
+    const newArtifact: Artifact = {
+      id: `artifact-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      description: `A mysterious artifact from the timestream.`,
+      type: 'relic' as const,
+      rarity: 'uncommon' as const,
+      eraOrigin: currentEra,
+      effects: ['Increases historical knowledge when studied']
+    };
+    
+    // Add to inventory
+    setInventory(prev => ({
+      ...prev,
+      artifacts: [...prev.artifacts, newArtifact]
+    }));
+    
+    addMessage(`Added ${name} to your inventory.`, 'inventory');
+    
+    // Improve skill based on artifact type
+    improveSkill('artifact_analysis', 1);
+    
+    return true;
+  }, [inventory, currentEra, addMessage]);
+  
+  // Improve a player skill
+  const improveSkill = useCallback((skill: keyof PlayerSkills, amount: number) => {
+    setPlayerSkills(prev => ({
+      ...prev,
+      [skill]: Math.min(10, prev[skill] + amount)
+    }));
+    
+    addMessage(`${skill.replace('_', ' ')} skill improved by ${amount}.`, 'success');
+  }, []);
 
   // Advance quest progress
   const advanceQuest = useCallback((questId: string) => {
@@ -330,9 +421,22 @@ const TimeNexus = () => {
         // Add message
         addMessage(`Quest progress: ${newProgress}/${quest.steps} steps completed.`, 'quest');
         
+        // Improve skills based on progress
+        if (playerClass === 'Time Mage') {
+          improveSkill('temporal_manipulation', 1);
+        } else if (playerClass === 'Historian') {
+          improveSkill('historical_knowledge', 1);
+        } else if (playerClass === 'Paradox Warrior') {
+          improveSkill('combat_prowess', 1);
+        }
+        
         // If completed, add completion message and reward
         if (completed) {
           addMessage(`Quest completed! Received reward: ${quest.reward}`, 'success');
+          
+          // Add artifact to inventory
+          addArtifactToInventory(quest.reward);
+          
           setArtifactsCollected(prev => prev + 1);
           
           // Improve timeline integrity for the era
@@ -348,13 +452,18 @@ const TimeNexus = () => {
           
           setTimelineRepairs(prev => prev + 1);
           setOverallIntegrity(prev => Math.min(100, prev + 3));
+          
+          // Randomly improve diplomacy
+          if (Math.random() > 0.7) {
+            improveSkill('diplomacy', 1);
+          }
         }
         
         return { ...quest, progress: newProgress, completed };
       }
       return quest;
     }));
-  }, [addMessage]);
+  }, [addMessage, playerClass, addArtifactToInventory, improveSkill]);
 
   // Get current quest for the active era
   const getCurrentQuest = useCallback(() => {
@@ -406,26 +515,102 @@ const TimeNexus = () => {
 
         {/* Main content area */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {currentEra === 'nexus' ? (
-            <TimeNexusHub 
-              playerClass={playerClass} 
-              onSelectClass={selectClass}
-              timelineRepairs={timelineRepairs}
-              artifactsCollected={artifactsCollected}
-              factionStanding={factionStanding}
-              overallIntegrity={overallIntegrity}
-              timePeriods={timePeriods}
-            />
-          ) : (
-            <HistoricalEra 
-              timePeriod={timePeriods.find(period => period.id === currentEra)!}
-              currentQuest={getCurrentQuest()}
-              onAdvanceQuest={advanceQuest}
-              onReturnToNexus={() => travelToEra('nexus')}
-              anomalies={getCurrentAnomalies()}
-              locations={getCurrentLocations()}
-            />
+          {/* Header Toolbar */}
+          {playerClass && (
+            <div className="flex justify-end space-x-2 p-2 bg-nexus-primary border-b border-nexus-accent">
+              {/* Inventory Button */}
+              <button 
+                onClick={() => setShowInventory(!showInventory)} 
+                className={`px-3 py-1 rounded flex items-center space-x-1 text-sm transition-colors ${showInventory ? 'bg-nexus-cyan text-nexus-dark' : 'bg-nexus-accent text-white hover:bg-nexus-cyan hover:text-nexus-dark'}`}
+              >
+                <Briefcase className="w-4 h-4" />
+                <span>Inventory ({inventory.artifacts.length}/{inventory.capacity})</span>
+              </button>
+              
+              {/* Skills Button */}
+              <button 
+                className="px-3 py-1 rounded flex items-center space-x-1 text-sm bg-nexus-accent text-white hover:bg-nexus-cyan hover:text-nexus-dark transition-colors"
+              >
+                <Users className="w-4 h-4" />
+                <span>Skills</span>
+              </button>
+            </div>
           )}
+          
+          {/* Main content */}
+          <div className={`flex-1 ${showInventory ? 'flex' : 'block'} overflow-hidden`}>
+            {/* Inventory Panel - only visible when showInventory is true */}
+            {showInventory && playerClass && (
+              <div className="w-80 bg-nexus-primary border-r border-nexus-accent p-4 overflow-y-auto">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-white">Inventory</h3>
+                  <button 
+                    onClick={() => setShowInventory(false)}
+                    className="text-nexus-light hover:text-white transition-colors"
+                  >
+                    <span className="text-lg">×</span>
+                  </button>
+                </div>
+                
+                {inventory.artifacts.length === 0 ? (
+                  <p className="text-nexus-light text-sm italic">Your inventory is empty. Complete quests to collect artifacts.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {inventory.artifacts.map(artifact => (
+                      <div 
+                        key={artifact.id}
+                        className={`p-3 rounded-md bg-nexus-dark border-l-4 
+                          ${artifact.rarity === 'common' ? 'border-gray-400' : 
+                            artifact.rarity === 'uncommon' ? 'border-nexus-green' :
+                            artifact.rarity === 'rare' ? 'border-nexus-cyan' : 'border-nexus-purple'
+                          }`}
+                      >
+                        <h4 className="text-white font-medium">{artifact.name}</h4>
+                        <div className="flex justify-between text-xs text-nexus-light mt-1">
+                          <span>{artifact.type}</span>
+                          <span className="capitalize">{artifact.rarity}</span>
+                        </div>
+                        <p className="text-sm text-nexus-light mt-2">{artifact.description}</p>
+                        {artifact.effects && (
+                          <div className="mt-2">
+                            <span className="text-xs text-nexus-cyan">Effects:</span>
+                            <ul className="text-xs text-nexus-light mt-1 list-disc pl-4">
+                              {artifact.effects.map((effect, idx) => (
+                                <li key={idx}>{effect}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className={`${showInventory ? 'flex-1' : 'w-full'} overflow-hidden flex flex-col`}>
+              {currentEra === 'nexus' ? (
+                <TimeNexusHub 
+                  playerClass={playerClass} 
+                  onSelectClass={selectClass}
+                  timelineRepairs={timelineRepairs}
+                  artifactsCollected={artifactsCollected}
+                  factionStanding={factionStanding}
+                  overallIntegrity={overallIntegrity}
+                  timePeriods={timePeriods}
+                />
+              ) : (
+                <HistoricalEra 
+                  timePeriod={timePeriods.find(period => period.id === currentEra)!}
+                  currentQuest={getCurrentQuest()}
+                  onAdvanceQuest={advanceQuest}
+                  onReturnToNexus={() => travelToEra('nexus')}
+                  anomalies={getCurrentAnomalies()}
+                  locations={getCurrentLocations()}
+                />
+              )}
+            </div>
+          </div>
           
           {/* Message log */}
           <MessageLog messages={messages} />
