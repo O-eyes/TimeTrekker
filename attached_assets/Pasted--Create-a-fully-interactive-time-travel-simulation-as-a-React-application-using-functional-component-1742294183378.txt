@@ -1,0 +1,60 @@
+"Create a fully interactive time-travel simulation as a React application using functional components and the useState and useEffect hooks. The application should present a player with a hub world known as the "Time Nexus," from which they can access different historical periods. The core mechanics should include a dynamic timeline system, a quest system, and a message log. The game should feature the following functionalities:
+1. Core Timeline Mechanics
+
+    The player should start in the "Time Nexus," a neutral hub where they can choose a class and interact with factions.
+    Four historical eras should be available:
+        Ancient Egypt
+        Roman Empire
+        Medieval Europe
+        Industrial Revolution
+    Each era should have:
+        A timeline integrity value (starting between 60-95%).
+        A number of anomalies (time distortions affecting the timeline).
+        An exploration status (whether the player has visited the era or not).
+    The player can travel between these eras, and the game should update the state accordingly.
+
+2. Class Selection
+
+    Before interacting with the world, the player must choose one of three classes:
+        Time Mage (manipulates time-based effects)
+        Historian (foresees possible timeline outcomes)
+        Paradox Warrior (harnesses timeline contradictions for power)
+    Once selected, the choice is locked in, and the player gains access to the core mechanics.
+
+3. Quest System
+
+    When a player travels to an era, they should receive a dynamically generated quest if one does not already exist.
+    Each quest should:
+        Be named based on the visited era (e.g., "Resolve an anomaly in Ancient Egypt").
+        Require a number of steps to complete (e.g., steps: 5).
+        Provide a reward upon completion (e.g., "Temporal Artifact").
+    Quest Progression:
+        A button should allow the player to advance the quest by 1 step at a time.
+        The UI should display the progress (e.g., Progress: 3/5).
+        Once complete, the quest should disappear, and the player should receive their reward.
+        If no quest is available, the game should notify the player.
+
+4. Message Log System
+
+    All major events (travel, class selection, quest updates) should be recorded in a scrollable message log.
+    Each message should have a category (e.g., system, success, quest, warning) with different background colors for readability.
+    New messages should appear at the bottom and automatically scroll the log down.
+
+5. UI & Styling
+
+    The UI should be clean and minimalistic with a dark-themed futuristic style.
+    Layout should consist of:
+        A sidebar for selecting time periods.
+        A main area displaying the current era and quests.
+        An interactive message log.
+    Use Tailwind CSS or a similar styling approach.
+    Include icons from lucide-react for visual polish (e.g., Clock, Hourglass, Sword, Scroll, Book, Zap).
+
+6. Technical Requirements
+
+    Built with React Functional Components using hooks (useState, useEffect).
+    State-driven UI: Every action (traveling, choosing a class, completing quests) updates the state dynamically.
+    Well-structured components with separate logic for state handling.
+    Performance Optimized: Ensure efficient state updates.
+
+Generate the full implementation of this interactive simulation as a TimeNexus component in React, ensuring all features above are properly implemented."
