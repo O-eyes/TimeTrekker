@@ -15,6 +15,9 @@ import TimePeriodSidebar from './TimePeriodSidebar';
 import TimeNexusHub from './TimeNexusHub';
 import HistoricalEra from './HistoricalEra';
 import MessageLog from './MessageLog';
+import InventoryPanel from './InventoryPanel';
+import SkillsPanel from './SkillsPanel';
+import NPCInteraction from './NPCInteraction';
 import { Clock, Briefcase, Users } from 'lucide-react';
 
 // Initial time periods data
@@ -258,6 +261,7 @@ const TimeNexus = () => {
     diplomacy: 1
   });
   const [showInventory, setShowInventory] = useState<boolean>(false);
+  const [showSkills, setShowSkills] = useState<boolean>(false);
 
   // Helper function to format timestamps
   function formatTimestamp(date: Date): string {
@@ -529,7 +533,8 @@ const TimeNexus = () => {
               
               {/* Skills Button */}
               <button 
-                className="px-3 py-1 rounded flex items-center space-x-1 text-sm bg-nexus-accent text-white hover:bg-nexus-cyan hover:text-nexus-dark transition-colors"
+                onClick={() => setShowSkills(!showSkills)}
+                className={`px-3 py-1 rounded flex items-center space-x-1 text-sm transition-colors ${showSkills ? 'bg-nexus-cyan text-nexus-dark' : 'bg-nexus-accent text-white hover:bg-nexus-cyan hover:text-nexus-dark'}`}
               >
                 <Users className="w-4 h-4" />
                 <span>Skills</span>
@@ -538,57 +543,50 @@ const TimeNexus = () => {
           )}
           
           {/* Main content */}
-          <div className={`flex-1 ${showInventory ? 'flex' : 'block'} overflow-hidden`}>
+          <div className={`flex-1 ${showInventory || showSkills ? 'flex' : 'block'} overflow-hidden`}>
             {/* Inventory Panel - only visible when showInventory is true */}
             {showInventory && playerClass && (
-              <div className="w-80 bg-nexus-primary border-r border-nexus-accent p-4 overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-white">Inventory</h3>
-                  <button 
-                    onClick={() => setShowInventory(false)}
-                    className="text-nexus-light hover:text-white transition-colors"
-                  >
-                    <span className="text-lg">×</span>
-                  </button>
-                </div>
-                
-                {inventory.artifacts.length === 0 ? (
-                  <p className="text-nexus-light text-sm italic">Your inventory is empty. Complete quests to collect artifacts.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {inventory.artifacts.map(artifact => (
-                      <div 
-                        key={artifact.id}
-                        className={`p-3 rounded-md bg-nexus-dark border-l-4 
-                          ${artifact.rarity === 'common' ? 'border-gray-400' : 
-                            artifact.rarity === 'uncommon' ? 'border-nexus-green' :
-                            artifact.rarity === 'rare' ? 'border-nexus-cyan' : 'border-nexus-purple'
-                          }`}
-                      >
-                        <h4 className="text-white font-medium">{artifact.name}</h4>
-                        <div className="flex justify-between text-xs text-nexus-light mt-1">
-                          <span>{artifact.type}</span>
-                          <span className="capitalize">{artifact.rarity}</span>
-                        </div>
-                        <p className="text-sm text-nexus-light mt-2">{artifact.description}</p>
-                        {artifact.effects && (
-                          <div className="mt-2">
-                            <span className="text-xs text-nexus-cyan">Effects:</span>
-                            <ul className="text-xs text-nexus-light mt-1 list-disc pl-4">
-                              {artifact.effects.map((effect, idx) => (
-                                <li key={idx}>{effect}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <InventoryPanel 
+                inventory={inventory} 
+                onClose={() => setShowInventory(false)} 
+              />
             )}
             
-            <div className={`${showInventory ? 'flex-1' : 'w-full'} overflow-hidden flex flex-col`}>
+            {/* Skills Panel - only visible when showSkills is true */}
+            {showSkills && playerClass && (
+              <SkillsPanel 
+                playerClass={playerClass}
+                skills={playerSkills}
+                onClose={() => setShowSkills(false)}
+              />
+            )}
+            
+            {/* Active NPC Interaction */}
+            {activeNPC && (
+              <NPCInteraction 
+                npc={activeNPC}
+                onClose={() => setActiveNPC(null)}
+                onCollectArtifact={(artifact) => {
+                  // Add artifact to inventory
+                  setInventory(prev => ({
+                    ...prev,
+                    artifacts: [...prev.artifacts, artifact]
+                  }));
+                  
+                  // Add message to log
+                  addMessage(`Added ${artifact.name} to your inventory.`, 'inventory');
+                  
+                  // Improve skill
+                  improveSkill('artifact_analysis', 1);
+                }}
+                onUnlockSideQuest={(questId) => {
+                  // TODO: Implement side quest unlocking
+                  addMessage('A new side quest has been unlocked!', 'quest');
+                }}
+              />
+            )}
+            
+            <div className={`${showInventory || showSkills ? 'flex-1' : 'w-full'} overflow-hidden flex flex-col`}>
               {currentEra === 'nexus' ? (
                 <TimeNexusHub 
                   playerClass={playerClass} 
