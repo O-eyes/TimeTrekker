@@ -1,129 +1,145 @@
 
 import { useState, useEffect } from 'react';
-import { PlayerClass, Location } from '@/types/game';
+import { Search, Clock, AlertTriangle } from 'lucide-react';
 
-interface InvestigationGameProps {
-  playerClass: PlayerClass;
-  location: Location;
-  onComplete: (success: boolean) => void;
+interface Clue {
+  id: string;
+  name: string;
+  description: string;
+  difficulty: number;
+  found: boolean;
 }
 
-const InvestigationGame = ({ playerClass, location, onComplete }: InvestigationGameProps) => {
-  const [gameState, setGameState] = useState<'ready' | 'playing' | 'complete'>('ready');
-  const [timeRemaining, setTimeRemaining] = useState(30);
-  const [cluesFound, setCluesFound] = useState(0);
-  
-  const getClassSpecificChallenge = () => {
-    switch (playerClass) {
-      case 'Time Mage':
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg text-nexus-cyan">Temporal Energy Pattern Match</h3>
-            <div className="grid grid-cols-3 gap-2">
-              {Array(9).fill(0).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => handlePatternClick(i)}
-                  className="w-full aspect-square bg-nexus-dark/50 hover:bg-nexus-accent/50 rounded border border-nexus-accent/50"
-                />
-              ))}
-            </div>
-          </div>
-        );
-      
-      case 'Historian':
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg text-nexus-cyan">Historical Document Analysis</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {Array(4).fill(0).map((_, i) => (
-                <div 
-                  key={i}
-                  onClick={() => handleDocumentClick(i)}
-                  className="p-4 bg-nexus-dark/50 hover:bg-nexus-accent/50 rounded border border-nexus-accent/50 cursor-pointer"
-                >
-                  <p className="text-sm text-nexus-light">Document Fragment {i + 1}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      
-      case 'Paradox Warrior':
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg text-nexus-cyan">Timeline Defense Simulation</h3>
-            <div className="relative h-48 bg-nexus-dark/50 rounded border border-nexus-accent/50">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="grid grid-cols-3 gap-2">
-                  {Array(6).fill(0).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleThreatClick(i)}
-                      className="px-4 py-2 bg-nexus-accent/30 hover:bg-nexus-accent/50 rounded text-nexus-cyan"
-                    >
-                      Clear Threat
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-    }
-  };
+interface InvestigationGameProps {
+  eraId: string;
+  useEnergy: (amount: number) => boolean;
+  onClueFound: (clue: Clue) => void;
+  onInvestigationComplete: () => void;
+}
 
-  const handlePatternClick = (index: number) => {
-    setCluesFound(prev => Math.min(prev + 1, 5));
-  };
-
-  const handleDocumentClick = (index: number) => {
-    setCluesFound(prev => Math.min(prev + 1, 5));
-  };
-
-  const handleThreatClick = (index: number) => {
-    setCluesFound(prev => Math.min(prev + 1, 5));
-  };
+const InvestigationGame = ({ eraId, useEnergy, onClueFound, onInvestigationComplete }: InvestigationGameProps) => {
+  const [clues, setClues] = useState<Clue[]>([]);
+  const [searchArea, setSearchArea] = useState<number[][]>([]);
+  const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
-    if (gameState === 'playing') {
-      const timer = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            onComplete(cluesFound >= 3);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
-      return () => clearInterval(timer);
-    }
-  }, [gameState, onComplete, cluesFound]);
-
-  if (gameState === 'ready') {
-    return (
-      <div className="p-6 bg-nexus-primary/90 rounded-lg">
-        <h2 className="text-xl text-white mb-4">Investigate {location.name}</h2>
-        <p className="text-nexus-light mb-6">{location.description}</p>
-        <button
-          onClick={() => setGameState('playing')}
-          className="px-4 py-2 bg-nexus-accent text-white rounded hover:bg-nexus-accent/80"
-        >
-          Begin Investigation
-        </button>
-      </div>
+    // Initialize search grid and clues
+    const grid = Array(6).fill(null).map(() => 
+      Array(6).fill(0).map(() => Math.random() * 100)
     );
-  }
+    setSearchArea(grid);
+
+    // Generate clues based on era
+    const newClues: Clue[] = [
+      {
+        id: `${eraId}-1`,
+        name: 'Mysterious Artifact',
+        description: 'An object that seems out of place in this timeline.',
+        difficulty: 3,
+        found: false
+      },
+      {
+        id: `${eraId}-2`,
+        name: 'Timeline Distortion',
+        description: 'A noticeable anomaly in the temporal field.',
+        difficulty: 2,
+        found: false
+      },
+      {
+        id: `${eraId}-3`,
+        name: 'Historical Document',
+        description: 'Contains important information about local events.',
+        difficulty: 1,
+        found: false
+      }
+    ];
+    setClues(newClues);
+  }, [eraId]);
+
+  useEffect(() => {
+    if (isSearching && timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    } else if (timeLeft === 0) {
+      setIsSearching(false);
+    }
+  }, [isSearching, timeLeft]);
+
+  const searchCell = (row: number, col: number) => {
+    if (!useEnergy(5)) return; // Require energy to search
+
+    setSelectedCell([row, col]);
+    const searchValue = searchArea[row][col];
+    
+    // Find clues based on search value
+    clues.forEach(clue => {
+      if (!clue.found && searchValue > 80 - clue.difficulty * 10) {
+        setClues(prev => prev.map(c => 
+          c.id === clue.id ? { ...c, found: true } : c
+        ));
+        onClueFound(clue);
+      }
+    });
+
+    // Check if all clues are found
+    if (clues.every(c => c.found)) {
+      onInvestigationComplete();
+    }
+  };
 
   return (
-    <div className="p-6 bg-nexus-primary/90 rounded-lg">
-      <div className="flex justify-between items-center mb-6">
-        <div className="text-nexus-cyan">Time Remaining: {timeRemaining}s</div>
-        <div className="text-nexus-yellow">Clues: {cluesFound}/5</div>
+    <div className="bg-nexus-dark/90 p-4 rounded-lg">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-nexus-cyan">Investigation Zone</h3>
+        <div className="flex items-center gap-2">
+          <Clock className="text-nexus-yellow" />
+          <span className="text-nexus-light">{timeLeft}s</span>
+        </div>
       </div>
-      
-      {getClassSpecificChallenge()}
+
+      <div className="grid grid-cols-6 gap-1 mb-4">
+        {searchArea.map((row, rowIndex) => (
+          row.map((value, colIndex) => (
+            <button
+              key={`${rowIndex}-${colIndex}`}
+              onClick={() => searchCell(rowIndex, colIndex)}
+              className={`
+                w-12 h-12 rounded 
+                ${selectedCell?.[0] === rowIndex && selectedCell?.[1] === colIndex
+                  ? 'bg-nexus-cyan'
+                  : 'bg-nexus-primary hover:bg-nexus-accent'}
+              `}
+            >
+              {value > 80 && <AlertTriangle className="w-4 h-4 text-nexus-yellow" />}
+            </button>
+          ))
+        ))}
+      </div>
+
+      <div className="space-y-2">
+        {clues.map(clue => (
+          <div 
+            key={clue.id}
+            className={`p-2 rounded ${
+              clue.found ? 'bg-nexus-accent/50' : 'bg-nexus-primary'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Search className={clue.found ? 'text-nexus-cyan' : 'text-nexus-yellow'} />
+              <span className={clue.found ? 'text-nexus-light' : 'text-white'}>
+                {clue.name}
+              </span>
+            </div>
+            {clue.found && (
+              <p className="text-sm text-nexus-light mt-1">{clue.description}</p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
