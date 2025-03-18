@@ -619,6 +619,7 @@ const TimeNexus = () => {
                   onReturnToNexus={() => travelToEra('nexus')}
                   anomalies={getCurrentAnomalies()}
                   locations={getCurrentLocations()}
+                  playerClass={playerClass}
                 />
               )}
             </div>

@@ -45,6 +45,7 @@ const HistoricalEra = ({
   onReturnToNexus,
   anomalies,
   locations,
+  playerClass,
   playerSkills,
   onCollectArtifact,
   onUnlockSideQuest,
