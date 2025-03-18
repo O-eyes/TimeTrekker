@@ -229,7 +229,7 @@ const TimeNexus = () => {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: '1',
+      id: `init-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       text: 'Welcome to the Time Nexus. Choose your class to begin.',
       type: 'system',
       timestamp: formatTimestamp(new Date()),
@@ -248,7 +248,7 @@ const TimeNexus = () => {
   // Add message to the log
   const addMessage = useCallback((text: string, type: Message['type'] = 'system') => {
     const newMessage: Message = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       text,
       type,
       timestamp: formatTimestamp(new Date()),
@@ -294,7 +294,7 @@ const TimeNexus = () => {
     if (!anomaly) return;
 
     const newQuest: Quest = {
-      id: `quest-${Date.now()}`,
+      id: `quest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       name: `Resolve an anomaly in ${era.name}`,
       description: `The ${anomaly.name.toLowerCase()} must be addressed to prevent timeline degradation.`,
       steps: 5,
