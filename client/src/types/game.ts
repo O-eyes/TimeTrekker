@@ -91,6 +91,7 @@ export interface PlayerSkills {
   combat_prowess: number;
   artifact_analysis: number;
   diplomacy: number;
+  [key: string]: number; // Index signature for string indexing
 }
 
 export interface Inventory {

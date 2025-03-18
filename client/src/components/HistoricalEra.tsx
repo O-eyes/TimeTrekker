@@ -162,6 +162,54 @@ const HistoricalEra = ({
               )}
             </div>
           </div>
+          
+          {/* Historical NPCs */}
+          <div className="bg-nexus-primary/80 backdrop-blur-md rounded-lg p-5 border border-nexus-accent mb-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+              <Users className="w-5 h-5 mr-2 text-nexus-yellow" />
+              Historical Figures
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {npcs.map(npc => (
+                <div 
+                  key={npc.id} 
+                  className="p-3 bg-nexus-dark/50 rounded border border-nexus-accent/50 hover:bg-nexus-dark/70 transition-colors cursor-pointer"
+                  onClick={() => handleNPCClick(npc)}
+                >
+                  <div className="flex items-start">
+                    <div 
+                      className="w-12 h-12 rounded-full overflow-hidden bg-nexus-dark mr-3 flex-shrink-0 bg-center bg-cover"
+                      style={{ backgroundImage: `url(${npc.portrait})` }}
+                    ></div>
+                    <div>
+                      <h4 className="font-medium text-white text-sm">{npc.name}</h4>
+                      <p className="text-xs text-nexus-cyan">{npc.role}</p>
+                      <p className="text-xs text-nexus-light mt-1 line-clamp-2">
+                        {npc.dialogue[0]?.text?.substring(0, 60)}...
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {npcs.length === 0 && (
+                <div className="p-3 bg-nexus-dark/50 rounded border border-nexus-accent/50 col-span-full">
+                  <p className="text-sm text-nexus-light">No historical figures available for interaction in this time period.</p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* NPC Interaction Dialog */}
+          {selectedNPC && (
+            <NPCInteraction 
+              npc={selectedNPC} 
+              onClose={handleCloseNPC}
+              onCollectArtifact={onCollectArtifact}
+              onUnlockSideQuest={onUnlockSideQuest}
+            />
+          )}
         </div>
       </div>
     </div>
