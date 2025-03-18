@@ -78,7 +78,7 @@ const HistoricalEra = ({
   };
 
   return (
-    <div className={`flex-1 overflow-y-auto scrollbar-thin historical-bg bg-nexus-primary ${backgroundClass} bg-cover bg-center`}>
+    <div className={`flex-1 overflow-y-auto scrollbar-thin historical-bg bg-nexus-primary ${backgroundClass} bg-cover bg-center h-[calc(81vh-4rem)]`}>
       <div className="min-h-full backdrop-blur-sm backdrop-brightness-50 p-4 md:p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6">
