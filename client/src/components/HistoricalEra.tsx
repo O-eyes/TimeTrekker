@@ -17,6 +17,8 @@ interface HistoricalEraProps {
   playerSkills?: PlayerSkills;
   onCollectArtifact?: (artifact: any) => void;
   onUnlockSideQuest?: (questId: string) => void;
+  playerClass?: string; // Added playerClass prop
+  addMessage: (message: string, type: string) => void; // Added addMessage function
 }
 
 // Placeholder ResourceGathering component
@@ -45,7 +47,9 @@ const HistoricalEra = ({
   locations,
   playerSkills,
   onCollectArtifact,
-  onUnlockSideQuest
+  onUnlockSideQuest,
+  playerClass, // Added playerClass prop
+  addMessage // Added addMessage function
 }: HistoricalEraProps) => {
   const [selectedNPC, setSelectedNPC] = useState<NPC | null>(null);
   const [currentInvestigation, setCurrentInvestigation] = useState<Location | null>(null); // Added state for current investigation
@@ -178,18 +182,27 @@ const HistoricalEra = ({
                   <h4 className="font-medium text-white text-sm">{location.name}</h4>
                   <p className="text-xs text-nexus-light mt-1">{location.description}</p>
                   <button 
-                    onClick={() => setCurrentInvestigation(location)}
-                    disabled={!currentQuest}
-                    className="mt-2 px-2 py-1 text-xs bg-nexus-accent/30 hover:bg-nexus-accent/50 rounded text-nexus-cyan transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      if (!playerClass) {
+                        addMessage("You must select a class before investigating.", "warning");
+                        return;
+                      }
+                      setCurrentInvestigation(location);
+                    }}
+                    className={`mt-2 px-2 py-1 text-xs rounded ${
+                      playerClass 
+                        ? 'bg-nexus-accent text-white hover:bg-nexus-accent/80' 
+                        : 'bg-nexus-dark/50 text-nexus-light cursor-not-allowed'
+                    }`}
                   >
-                    Investigate
+                    {playerClass ? 'Investigate' : 'Class Required'}
                   </button>
 
                   {currentInvestigation?.id === location.id && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                       <div className="max-w-2xl w-full mx-4">
                         <InvestigationGame
-                          playerClass={'playerClass'} // Added playerClass prop (replace 'playerClass' with actual prop)
+                          playerClass={playerClass} // Added playerClass prop (replace 'playerClass' with actual prop)
                           location={currentInvestigation}
                           onComplete={(success) => {
                             if (success) {
