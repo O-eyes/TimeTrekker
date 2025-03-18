@@ -1,236 +1,438 @@
-import { useState, useEffect } from "react";
-import TimeSidebar from "./TimeSidebar";
-import ClassSelection from "./ClassSelection";
-import TimeEraContent from "./TimeEraContent";
-import MessageLog from "./MessageLog";
-import { Era, PlayerClass, Quest, Message } from "@/types";
+import { useState, useEffect, useCallback } from 'react';
 import { 
-  Clock, User, Zap, 
-} from "lucide-react";
+  PlayerClass, 
+  TimePeriod, 
+  Quest, 
+  Message, 
+  Anomaly,
+  Location
+} from '@/types/game';
+import TimePeriodSidebar from './TimePeriodSidebar';
+import TimeNexusHub from './TimeNexusHub';
+import HistoricalEra from './HistoricalEra';
+import MessageLog from './MessageLog';
+import { Clock } from 'lucide-react';
 
-const initialEras: Era[] = [
+// Initial time periods data
+const initialTimePeriods: TimePeriod[] = [
   {
-    id: "ancient-egypt",
-    name: "Ancient Egypt",
-    period: "3100 BCE - 332 BCE",
-    description: "The Age of Pyramids and Pharaohs",
-    integrity: 85,
+    id: 'nexus',
+    name: 'Time Nexus',
+    shortDescription: 'Central Hub',
+    integrity: 100,
+    anomalies: 0,
+    explored: true,
+    icon: 'network',
+  },
+  {
+    id: 'egypt',
+    name: 'Ancient Egypt',
+    shortDescription: '2500 BCE - Reign of Pharaoh Khufu',
+    integrity: 82,
     anomalies: 3,
     explored: false,
-    colorClass: "text-yellow-500", // nexus-warning
-    locations: [
-      { name: "Giza Plateau", description: "Construction site of the Great Pyramid", colorClass: "bg-sky-500" },
-      { name: "Pharaoh's Palace", description: "Royal residence of Khufu", colorClass: "bg-purple-600" },
-      { name: "Nile River Delta", description: "Trade hub and spiritual center", colorClass: "bg-amber-500" }
-    ],
-    anomalyDetails: [
-      { name: "Pyramid Construction Interference", description: "Timeline deviation: Modern tools appearing in 2500 BCE", severity: "high" },
-      { name: "Temporal Echo in Royal Court", description: "Fragments of future events influencing royal decisions", severity: "medium" },
-      { name: "Agricultural Timeline Shift", description: "Crops from future centuries appearing in fields", severity: "medium" }
-    ]
+    icon: 'landmark',
   },
   {
-    id: "roman-empire",
-    name: "Roman Empire",
-    period: "27 BCE - 476 CE",
-    description: "The Golden Age of Rome",
-    integrity: 72,
+    id: 'rome',
+    name: 'Roman Empire',
+    shortDescription: '50 CE - Height of Imperial Rome',
+    integrity: 64,
     anomalies: 5,
-    explored: true,
-    colorClass: "text-amber-500" // nexus-accent
+    explored: false,
+    icon: 'pillar',
   },
   {
-    id: "medieval-europe",
-    name: "Medieval Europe",
-    period: "476 CE - 1500 CE",
-    description: "Age of Knights and Castles",
+    id: 'medieval',
+    name: 'Medieval Europe',
+    shortDescription: '1200 CE - Age of Feudalism',
+    integrity: 75,
+    anomalies: 2,
+    explored: false,
+    icon: 'sword',
+  },
+  {
+    id: 'industrial',
+    name: 'Industrial Revolution',
+    shortDescription: '1850 CE - Age of Steam',
     integrity: 91,
     anomalies: 1,
     explored: false,
-    colorClass: "text-sky-500" // nexus-secondary
+    icon: 'factory',
   },
-  {
-    id: "industrial-revolution",
-    name: "Industrial Revolution",
-    period: "1760 CE - 1840 CE",
-    description: "The Machine Age",
-    integrity: 64,
-    anomalies: 7,
-    explored: true,
-    colorClass: "text-red-500" // nexus-danger
-  }
 ];
 
-export default function TimeNexus() {
+// Initial anomalies data
+const initialAnomalies: Record<string, Anomaly[]> = {
+  egypt: [
+    {
+      id: 'egypt-1',
+      name: 'Missing Pyramid Capstone',
+      description: 'The golden capstone of the Great Pyramid has vanished, causing timeline distortions.',
+      status: 'active',
+      periodId: 'egypt',
+    },
+    {
+      id: 'egypt-2',
+      name: 'Anachronistic Technology',
+      description: 'Modern tools discovered in Pharaoh\'s tomb, creating serious paradox potential.',
+      status: 'active',
+      periodId: 'egypt',
+    },
+    {
+      id: 'egypt-3',
+      name: 'Royal Lineage Disruption',
+      description: 'An unknown figure is influencing royal succession decisions.',
+      status: 'active',
+      periodId: 'egypt',
+    }
+  ],
+  rome: [
+    {
+      id: 'rome-1',
+      name: 'Senate Conspiracy',
+      description: 'A faction with future knowledge is manipulating the Roman Senate.',
+      status: 'active',
+      periodId: 'rome',
+    },
+    {
+      id: 'rome-2',
+      name: 'Colosseum Malfunction',
+      description: 'The Colosseum contains machinery centuries ahead of its time.',
+      status: 'active',
+      periodId: 'rome',
+    },
+    {
+      id: 'rome-3',
+      name: 'Displaced Legionaries',
+      description: 'An entire legion has disappeared from the timeline.',
+      status: 'active',
+      periodId: 'rome',
+    }
+  ],
+  medieval: [
+    {
+      id: 'medieval-1',
+      name: 'Disrupted Crusade',
+      description: 'The Fourth Crusade never occurred, causing major timeline deviations.',
+      status: 'active',
+      periodId: 'medieval',
+    },
+    {
+      id: 'medieval-2',
+      name: 'Alchemical Anomaly',
+      description: 'Alchemists have discovered advanced chemistry too early.',
+      status: 'active',
+      periodId: 'medieval',
+    }
+  ],
+  industrial: [
+    {
+      id: 'industrial-1',
+      name: 'Missing Inventor',
+      description: 'A key inventor has vanished, threatening technological progression.',
+      status: 'active',
+      periodId: 'industrial',
+    }
+  ]
+};
+
+// Initial locations data
+const initialLocations: Record<string, Location[]> = {
+  egypt: [
+    {
+      id: 'egypt-loc-1',
+      name: 'Great Pyramid of Giza',
+      description: 'Construction site with thousands of workers.',
+      periodId: 'egypt',
+    },
+    {
+      id: 'egypt-loc-2',
+      name: 'Royal Palace',
+      description: 'Center of political power and intrigue.',
+      periodId: 'egypt',
+    },
+    {
+      id: 'egypt-loc-3',
+      name: 'Temple of Ra',
+      description: 'Sacred site with powerful temporal energy.',
+      periodId: 'egypt',
+    }
+  ],
+  rome: [
+    {
+      id: 'rome-loc-1',
+      name: 'Roman Forum',
+      description: 'Center of Roman politics and commerce.',
+      periodId: 'rome',
+    },
+    {
+      id: 'rome-loc-2',
+      name: 'Colosseum',
+      description: 'Massive amphitheater with temporal disturbances.',
+      periodId: 'rome',
+    },
+    {
+      id: 'rome-loc-3',
+      name: 'Senate House',
+      description: 'Where powerful decisions shape the empire.',
+      periodId: 'rome',
+    }
+  ],
+  medieval: [
+    {
+      id: 'medieval-loc-1',
+      name: 'Castle Keep',
+      description: 'Fortress with unusual defensive technologies.',
+      periodId: 'medieval',
+    },
+    {
+      id: 'medieval-loc-2',
+      name: 'Cathedral Square',
+      description: 'Center of religious and cultural life.',
+      periodId: 'medieval',
+    },
+    {
+      id: 'medieval-loc-3',
+      name: 'Alchemist Quarter',
+      description: 'Where strange experiments are conducted.',
+      periodId: 'medieval',
+    }
+  ],
+  industrial: [
+    {
+      id: 'industrial-loc-1',
+      name: 'Steam Factory',
+      description: 'Hub of industrial innovation.',
+      periodId: 'industrial',
+    },
+    {
+      id: 'industrial-loc-2',
+      name: 'Inventor\'s Workshop',
+      description: 'Where the future is being created too soon.',
+      periodId: 'industrial',
+    },
+    {
+      id: 'industrial-loc-3',
+      name: 'Railway Terminal',
+      description: 'Node in the transportation network with temporal anomalies.',
+      periodId: 'industrial',
+    }
+  ]
+};
+
+const TimeNexus = () => {
+  // Main app state
   const [playerClass, setPlayerClass] = useState<PlayerClass>(null);
-  const [currentLocation, setCurrentLocation] = useState<string>("nexus");
-  const [eras, setEras] = useState<Era[]>(initialEras);
-  const [activeQuest, setActiveQuest] = useState<Quest | null>(null);
+  const [currentEra, setCurrentEra] = useState<string>('nexus');
+  const [timePeriods, setTimePeriods] = useState<TimePeriod[]>(initialTimePeriods);
+  const [quests, setQuests] = useState<Quest[]>([]);
   const [messages, setMessages] = useState<Message[]>([
-    { type: "SYSTEM", text: "Welcome to the Time Nexus. Please select your temporal class to begin.", timestamp: Date.now() }
+    {
+      id: '1',
+      text: 'Welcome to the Time Nexus. Choose your class to begin.',
+      type: 'system',
+      timestamp: formatTimestamp(new Date()),
+    }
   ]);
+  const [timelineRepairs, setTimelineRepairs] = useState<number>(0);
+  const [artifactsCollected, setArtifactsCollected] = useState<number>(0);
+  const [factionStanding, setFactionStanding] = useState<string>('Neutral');
+  const [overallIntegrity, setOverallIntegrity] = useState<number>(78);
 
-  const getDisplayNameForClass = (className: PlayerClass) => {
-    switch (className) {
-      case "time-mage": return "Time Mage";
-      case "historian": return "Historian";
-      case "paradox-warrior": return "Paradox Warrior";
-      default: return "";
-    }
-  };
+  // Helper function to format timestamps
+  function formatTimestamp(date: Date): string {
+    return date.toLocaleTimeString().slice(0, 5);
+  }
 
-  const addMessage = (type: Message["type"], text: string) => {
-    const newMessage = { type, text, timestamp: Date.now() };
-    setMessages(prev => [...prev, newMessage]);
-  };
+  // Add message to the log
+  const addMessage = useCallback((text: string, type: Message['type'] = 'system') => {
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text,
+      type,
+      timestamp: formatTimestamp(new Date()),
+    };
+    setMessages(prevMessages => [...prevMessages, newMessage]);
+  }, []);
 
-  const handleClassSelect = (selectedClass: PlayerClass) => {
+  // Select player class
+  const selectClass = useCallback((selectedClass: PlayerClass) => {
     setPlayerClass(selectedClass);
-    const displayName = getDisplayNameForClass(selectedClass);
-    addMessage("SUCCESS", `You have selected the ${displayName} class. Your temporal abilities are now active.`);
-  };
+    addMessage(`You have chosen the ${selectedClass} class. Temporal abilities unlocked.`, 'success');
+  }, [addMessage]);
 
-  const handleEraSelect = (eraId: string) => {
-    // Can't travel without selecting a class first
-    if (!playerClass) return;
+  // Travel to a different era
+  const travelToEra = useCallback((eraId: string) => {
+    const era = timePeriods.find(period => period.id === eraId);
+    if (!era) return;
+
+    setCurrentEra(eraId);
     
-    // Set current location to the selected era
-    setCurrentLocation(eraId);
-    
-    // Find the selected era
-    const selectedEra = eras.find(era => era.id === eraId);
-    if (!selectedEra) return;
-    
-    // Generate travel message
-    addMessage("TRAVEL", `You have traveled to ${selectedEra.name} (${selectedEra.period}).`);
-    
-    // If the era has not been explored yet, mark as explored
-    if (!selectedEra.explored) {
-      setEras(prev => prev.map(era => 
-        era.id === eraId ? { ...era, explored: true } : era
+    // Mark as explored if first visit
+    if (!era.explored && eraId !== 'nexus') {
+      setTimePeriods(prev => prev.map(period => 
+        period.id === eraId ? { ...period, explored: true } : period
       ));
+      addMessage(`First visit to ${era.name}. Timeline integrity at ${era.integrity}%.`, 'travel');
+    } else {
+      addMessage(`Traveled to ${era.name}. Timeline integrity at ${era.integrity}%.`, 'travel');
     }
-    
-    // Generate quest if one doesn't exist for this era yet
-    if (!activeQuest || activeQuest.eraId !== eraId) {
-      const newQuest: Quest = {
-        id: `quest-${Date.now()}`,
-        title: `Resolve an anomaly in ${selectedEra.name}`,
-        description: selectedEra.id === "ancient-egypt" 
-          ? "The construction of the Great Pyramid is facing timeline interference. Investigate and fix the anomaly."
-          : `Timeline anomalies detected in ${selectedEra.name}. Restore the proper flow of history.`,
-        eraId: eraId,
-        totalSteps: 5,
-        currentStep: 0,
-        reward: selectedEra.id === "ancient-egypt" 
-          ? "Temporal Artifact - Pharaoh's Chronometer"
-          : `Temporal Artifact from ${selectedEra.name}`,
-        isCompleted: false
-      };
-      
-      setActiveQuest(newQuest);
-      addMessage("QUEST", `New quest accepted: "${newQuest.title}".`);
+
+    // Generate a quest if none exists for this era and it's not the nexus
+    if (eraId !== 'nexus' && !quests.some(q => q.periodId === eraId && !q.completed)) {
+      generateQuest(eraId);
     }
-    
-    // Add warning about timeline integrity
-    addMessage("WARNING", `Timeline integrity at ${selectedEra.integrity}%. Multiple anomalies detected in this era.`);
+  }, [timePeriods, quests, addMessage]);
+
+  // Generate a new quest for an era
+  const generateQuest = useCallback((eraId: string) => {
+    const era = timePeriods.find(period => period.id === eraId);
+    if (!era) return;
+
+    const anomaly = initialAnomalies[eraId]?.[0];
+    if (!anomaly) return;
+
+    const newQuest: Quest = {
+      id: `quest-${Date.now()}`,
+      name: `Resolve an anomaly in ${era.name}`,
+      description: `The ${anomaly.name.toLowerCase()} must be addressed to prevent timeline degradation.`,
+      steps: 5,
+      progress: 0,
+      reward: generateReward(),
+      completed: false,
+      periodId: eraId,
+    };
+
+    setQuests(prev => [...prev, newQuest]);
+    addMessage(`New quest received: ${newQuest.name}`, 'quest');
+  }, [timePeriods, addMessage]);
+
+  // Generate a random reward
+  const generateReward = () => {
+    const rewards = [
+      'Temporal Artifact: Hourglass of Thoth',
+      'Temporal Artifact: Chronometer Compass',
+      'Temporal Artifact: Paradox Prism',
+      'Temporal Artifact: Time-Weaver\'s Thread',
+      'Temporal Artifact: Quantum Chalice'
+    ];
+    return rewards[Math.floor(Math.random() * rewards.length)];
   };
 
-  const advanceQuest = () => {
-    if (!activeQuest || activeQuest.isCompleted) return;
-    
-    if (activeQuest.currentStep < activeQuest.totalSteps) {
-      const updatedQuest = {
-        ...activeQuest,
-        currentStep: activeQuest.currentStep + 1
-      };
-      
-      // Check if quest is now complete
-      if (updatedQuest.currentStep === updatedQuest.totalSteps) {
-        updatedQuest.isCompleted = true;
-        setActiveQuest(updatedQuest);
-        addMessage("SUCCESS", `Quest completed: "${activeQuest.title}". Received reward: ${activeQuest.reward}.`);
+  // Advance quest progress
+  const advanceQuest = useCallback((questId: string) => {
+    setQuests(prev => prev.map(quest => {
+      if (quest.id === questId && quest.progress < quest.steps) {
+        const newProgress = quest.progress + 1;
+        const completed = newProgress >= quest.steps;
         
-        // Update era integrity since the quest is completed
-        const eraId = activeQuest.eraId;
-        setEras(prev => prev.map(era => {
-          if (era.id === eraId) {
-            // Increase integrity by 5-15% but don't exceed 100%
-            const increase = Math.floor(Math.random() * 11) + 5;
-            const newIntegrity = Math.min(100, era.integrity + increase);
-            // Decrease anomalies by 1 (minimum 0)
-            const newAnomalies = Math.max(0, era.anomalies - 1);
-            
-            return { ...era, integrity: newIntegrity, anomalies: newAnomalies };
-          }
-          return era;
-        }));
-      } else {
-        // Just advance the quest
-        setActiveQuest(updatedQuest);
-        addMessage("QUEST", `Quest progress updated: ${updatedQuest.currentStep}/${updatedQuest.totalSteps} steps completed.`);
+        // Add message
+        addMessage(`Quest progress: ${newProgress}/${quest.steps} steps completed.`, 'quest');
+        
+        // If completed, add completion message and reward
+        if (completed) {
+          addMessage(`Quest completed! Received reward: ${quest.reward}`, 'success');
+          setArtifactsCollected(prev => prev + 1);
+          
+          // Improve timeline integrity for the era
+          setTimePeriods(prevPeriods => prevPeriods.map(period => 
+            period.id === quest.periodId 
+              ? { 
+                  ...period, 
+                  integrity: Math.min(100, period.integrity + 5),
+                  anomalies: Math.max(0, period.anomalies - 1)
+                } 
+              : period
+          ));
+          
+          setTimelineRepairs(prev => prev + 1);
+          setOverallIntegrity(prev => Math.min(100, prev + 3));
+        }
+        
+        return { ...quest, progress: newProgress, completed };
       }
-    }
-  };
+      return quest;
+    }));
+  }, [addMessage]);
 
-  const handleClearLog = () => {
-    setMessages([{ type: "SYSTEM", text: "Message log cleared.", timestamp: Date.now() }]);
-  };
+  // Get current quest for the active era
+  const getCurrentQuest = useCallback(() => {
+    return quests.find(quest => quest.periodId === currentEra && !quest.completed);
+  }, [currentEra, quests]);
+
+  // Get anomalies for the current era
+  const getCurrentAnomalies = useCallback(() => {
+    if (currentEra === 'nexus') return [];
+    return initialAnomalies[currentEra] || [];
+  }, [currentEra]);
+
+  // Get locations for the current era
+  const getCurrentLocations = useCallback(() => {
+    if (currentEra === 'nexus') return [];
+    return initialLocations[currentEra] || [];
+  }, [currentEra]);
+
+  // Initial welcome message
+  useEffect(() => {
+    // Initial message is already added in the state initialization
+  }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-900 text-slate-200 font-sans">
+    <div id="time-nexus" className="flex flex-col h-screen bg-nexus-dark overflow-hidden">
       {/* Header */}
-      <header className="bg-slate-950 p-4 border-b border-purple-600/30">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl md:text-3xl font-medium font-mono font-bold text-white flex items-center">
-            <Clock className="h-8 w-8 mr-2 text-sky-500" />
-            <span>Time Nexus</span>
-          </h1>
-          
-          {/* Player Status */}
-          <div className="flex items-center space-x-2">
-            {playerClass && (
-              <div className="hidden md:flex items-center mr-2">
-                <Zap className="h-5 w-5 mr-1 text-amber-500" />
-                <span className="text-amber-500 font-medium text-sm">{getDisplayNameForClass(playerClass)}</span>
-              </div>
-            )}
-            <div className="bg-slate-800 rounded-full p-1 shadow-[0_0_15px_rgba(109,40,217,0.4)]">
-              <User className="h-6 w-6 text-purple-600" />
+      <header className="bg-nexus-primary px-6 py-3 border-b border-nexus-accent flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <Clock className="w-6 h-6 text-nexus-cyan" />
+          <h1 className="text-xl font-semibold text-white">Time Nexus</h1>
+        </div>
+        
+        {playerClass && (
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-2 text-sm text-nexus-cyan font-mono">
+              <span className="px-2 py-1 bg-nexus-secondary rounded-md">Class: {playerClass}</span>
             </div>
           </div>
-        </div>
+        )}
       </header>
-      
-      {/* Main Content */}
-      <main className="flex-grow flex flex-col md:flex-row">
-        {/* Time Era Sidebar */}
-        <TimeSidebar 
-          eras={eras} 
-          currentLocation={currentLocation} 
-          onSelectEra={handleEraSelect} 
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar with time periods */}
+        <TimePeriodSidebar 
+          timePeriods={timePeriods} 
+          currentEra={currentEra} 
+          onSelectEra={travelToEra} 
         />
-        
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1 p-4 md:p-6 overflow-auto">
-            {/* Show class selection if no class selected yet */}
-            {!playerClass ? (
-              <ClassSelection onSelectClass={handleClassSelect} />
-            ) : (
-              <TimeEraContent 
-                currentLocation={currentLocation}
-                eras={eras}
-                activeQuest={activeQuest}
-                onAdvanceQuest={advanceQuest}
-              />
-            )}
-          </div>
+
+        {/* Main content area */}
+        <main className="flex-1 flex flex-col overflow-hidden">
+          {currentEra === 'nexus' ? (
+            <TimeNexusHub 
+              playerClass={playerClass} 
+              onSelectClass={selectClass}
+              timelineRepairs={timelineRepairs}
+              artifactsCollected={artifactsCollected}
+              factionStanding={factionStanding}
+              overallIntegrity={overallIntegrity}
+              timePeriods={timePeriods}
+            />
+          ) : (
+            <HistoricalEra 
+              timePeriod={timePeriods.find(period => period.id === currentEra)!}
+              currentQuest={getCurrentQuest()}
+              onAdvanceQuest={advanceQuest}
+              onReturnToNexus={() => travelToEra('nexus')}
+              anomalies={getCurrentAnomalies()}
+              locations={getCurrentLocations()}
+            />
+          )}
           
-          {/* Message Log */}
-          <MessageLog messages={messages} onClearLog={handleClearLog} />
-        </div>
-      </main>
+          {/* Message log */}
+          <MessageLog messages={messages} />
+        </main>
+      </div>
     </div>
   );
-}
+};
+
+export default TimeNexus;
