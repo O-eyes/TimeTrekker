@@ -25,7 +25,7 @@ const QuestDisplay = ({ quest, onAdvanceQuest, playerSkills }: QuestDisplayProps
     // Return all choices, but mark which ones the player meets requirements for
     return choices.map(choice => ({
       ...choice,
-      meetsRequirement: meetsSkillRequirement(playerSkills, choice)
+      meetsRequirement: meetsSkillRequirement(playerSkills as Record<string, number>, choice)
     }));
   };
   

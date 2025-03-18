@@ -1,4 +1,4 @@
-import { QuestChoice } from '@/types/game';
+import { QuestChoice, PlayerSkills } from '@/types/game';
 
 // Quest choices for each era
 export const questChoices: Record<string, QuestChoice[]> = {
@@ -147,9 +147,9 @@ export function getQuestChoiceById(choiceId: string): QuestChoice | undefined {
 }
 
 // Helper function to check if player meets skill requirement for a choice
-export function meetsSkillRequirement(playerSkills: Record<string, number>, choice: QuestChoice): boolean {
+export function meetsSkillRequirement(playerSkills: Record<string, number> | PlayerSkills, choice: QuestChoice): boolean {
   if (!choice.skillRequirement) return true;
   
   const { skill, level } = choice.skillRequirement;
-  return (playerSkills[skill] || 0) >= level;
+  return ((playerSkills as Record<string, number>)[skill] || 0) >= level;
 }

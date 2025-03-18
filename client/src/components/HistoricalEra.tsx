@@ -14,14 +14,33 @@ interface HistoricalEraProps {
   locations: Location[];
 }
 
+interface HistoricalEraProps {
+  timePeriod: TimePeriod;
+  currentQuest: Quest | undefined;
+  onAdvanceQuest: (questId: string) => void;
+  onReturnToNexus: () => void;
+  anomalies: Anomaly[];
+  locations: Location[];
+  playerSkills?: PlayerSkills;
+  onCollectArtifact?: (artifact: any) => void;
+  onUnlockSideQuest?: (questId: string) => void;
+}
+
 const HistoricalEra = ({ 
   timePeriod,
   currentQuest,
   onAdvanceQuest,
   onReturnToNexus,
   anomalies,
-  locations
+  locations,
+  playerSkills,
+  onCollectArtifact,
+  onUnlockSideQuest
 }: HistoricalEraProps) => {
+  const [selectedNPC, setSelectedNPC] = useState<NPC | null>(null);
+  
+  // Get NPCs for this time period
+  const npcs = timePeriod.npcs || getNPCsForEra(timePeriod.id);
   
   // Map the era ID to a CSS background class
   const eraBackgrounds: Record<string, string> = {
@@ -32,6 +51,16 @@ const HistoricalEra = ({
   };
   
   const backgroundClass = eraBackgrounds[timePeriod.id] || '';
+  
+  // Handle NPC selection
+  const handleNPCClick = (npc: NPC) => {
+    setSelectedNPC(npc);
+  };
+  
+  // Close NPC dialog
+  const handleCloseNPC = () => {
+    setSelectedNPC(null);
+  };
   
   return (
     <div className={`flex-1 overflow-y-auto scrollbar-thin historical-bg bg-nexus-primary ${backgroundClass} bg-cover bg-center`}>
@@ -104,6 +133,7 @@ const HistoricalEra = ({
             <QuestDisplay 
               quest={currentQuest} 
               onAdvanceQuest={onAdvanceQuest}
+              playerSkills={playerSkills}
             />
           </div>
           
