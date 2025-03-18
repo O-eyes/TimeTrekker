@@ -149,7 +149,11 @@ const HistoricalEra = ({
                 <div key={location.id} className="p-3 bg-nexus-dark/50 rounded border border-nexus-accent/50">
                   <h4 className="font-medium text-white text-sm">{location.name}</h4>
                   <p className="text-xs text-nexus-light mt-1">{location.description}</p>
-                  <button className="mt-2 px-2 py-1 text-xs bg-nexus-accent/30 hover:bg-nexus-accent/50 rounded text-nexus-cyan transition-colors w-full">
+                  <button 
+                    onClick={() => onAdvanceQuest(currentQuest?.id || '')}
+                    disabled={!currentQuest}
+                    className="mt-2 px-2 py-1 text-xs bg-nexus-accent/30 hover:bg-nexus-accent/50 rounded text-nexus-cyan transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     Investigate
                   </button>
                 </div>
