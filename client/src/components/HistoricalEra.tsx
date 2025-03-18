@@ -1,6 +1,9 @@
-import { TimePeriod, Quest, Anomaly, Location } from '@/types/game';
+import { useState } from 'react';
+import { TimePeriod, Quest, Anomaly, Location, NPC, PlayerSkills } from '@/types/game';
+import { getNPCsForEra } from '@/data/npcs';
 import QuestDisplay from './QuestDisplay';
-import { Landmark, ArrowLeft, AlertTriangle, Map } from 'lucide-react';
+import NPCInteraction from './NPCInteraction';
+import { Landmark, ArrowLeft, AlertTriangle, Map, Users } from 'lucide-react';
 
 interface HistoricalEraProps {
   timePeriod: TimePeriod;
