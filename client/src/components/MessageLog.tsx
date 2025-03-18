@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Message, COLOR_MAP } from '@/types/game';
 import { MessageSquareText, Trash2 } from 'lucide-react';
 
@@ -7,40 +7,40 @@ interface MessageLogProps {
 }
 
 const MessageLog = ({ messages }: MessageLogProps) => {
-  const messageLogRef = useRef<HTMLDivElement>(null);
-  
-  // Auto-scroll to bottom when new messages are added
+  const [isMinimized, setIsMinimized] = useState(false);
+  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
-    if (messageLogRef.current) {
-      messageLogRef.current.scrollTop = messageLogRef.current.scrollHeight;
-    }
+    scrollToBottom();
   }, [messages]);
-  
+
   return (
-    <div className="h-48 border-t border-nexus-accent bg-nexus-primary overflow-hidden flex flex-col">
-      <div className="px-4 py-2 border-b border-nexus-accent flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <MessageSquareText className="w-5 h-5 text-nexus-cyan" />
-          <h3 className="font-medium text-white">Message Log</h3>
-        </div>
-        <button className="text-nexus-light hover:text-white transition-colors">
-          <Trash2 className="w-4 h-4" />
+    <div className={`bg-nexus-primary/80 border-t border-nexus-accent transition-all ${isMinimized ? 'h-12' : 'h-48'}`}>
+      <div className="flex justify-between items-center px-4 py-2 border-b border-nexus-accent">
+        <h3 className="text-sm font-medium text-nexus-cyan">Message Log</h3>
+        <button 
+          onClick={() => setIsMinimized(!isMinimized)} 
+          className="text-nexus-light hover:text-nexus-cyan"
+        >
+          {isMinimized ? 'Maximize' : 'Minimize'}
         </button>
       </div>
-      
-      <div 
-        ref={messageLogRef}
-        className="flex-1 overflow-y-auto scrollbar-thin p-2 space-y-2 text-sm font-mono"
-      >
-        {messages.map((message) => (
-          <div 
-            key={message.id} 
-            className={`p-2 rounded bg-nexus-dark/50 border-l-4 ${COLOR_MAP[message.type]}`}
-          >
-            <span className="text-xs text-nexus-light mr-2">{message.timestamp}</span>
-            <span className="text-white">{message.text}</span>
-          </div>
-        ))}
+      <div className={`${isMinimized ? 'hidden' : 'block'} overflow-y-auto custom-scrollbar`}>
+        <div ref={messagesEndRef} className="p-4 flex flex-col"> {/* Added ref for scrolling */}
+          {messages.map((message) => (
+            <div 
+              key={message.id} 
+              className={`p-2 rounded bg-nexus-dark/50 border-l-4 ${COLOR_MAP[message.type]}`}
+            >
+              <span className="text-xs text-nexus-light mr-2">{message.timestamp}</span>
+              <span className="text-white">{message.text}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

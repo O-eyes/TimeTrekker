@@ -150,12 +150,29 @@ const HistoricalEra = ({
                   <h4 className="font-medium text-white text-sm">{location.name}</h4>
                   <p className="text-xs text-nexus-light mt-1">{location.description}</p>
                   <button 
-                    onClick={() => onAdvanceQuest(currentQuest?.id || '')}
+                    onClick={() => setCurrentInvestigation(location)}
                     disabled={!currentQuest}
                     className="mt-2 px-2 py-1 text-xs bg-nexus-accent/30 hover:bg-nexus-accent/50 rounded text-nexus-cyan transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Investigate
                   </button>
+                  
+                  {currentInvestigation?.id === location.id && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                      <div className="max-w-2xl w-full mx-4">
+                        <InvestigationGame
+                          playerClass={playerClass}
+                          location={currentInvestigation}
+                          onComplete={(success) => {
+                            if (success) {
+                              onAdvanceQuest(currentQuest?.id || '');
+                            }
+                            setCurrentInvestigation(null);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
               
