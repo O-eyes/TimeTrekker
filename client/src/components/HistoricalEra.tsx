@@ -4,15 +4,8 @@ import { getNPCsForEra } from '@/data/npcs';
 import QuestDisplay from './QuestDisplay';
 import NPCInteraction from './NPCInteraction';
 import { Landmark, ArrowLeft, AlertTriangle, Map, Users } from 'lucide-react';
+import InvestigationGame from './InvestigationGame'; // Import the InvestigationGame component
 
-interface HistoricalEraProps {
-  timePeriod: TimePeriod;
-  currentQuest: Quest | undefined;
-  onAdvanceQuest: (questId: string) => void;
-  onReturnToNexus: () => void;
-  anomalies: Anomaly[];
-  locations: Location[];
-}
 
 interface HistoricalEraProps {
   timePeriod: TimePeriod;
@@ -38,10 +31,11 @@ const HistoricalEra = ({
   onUnlockSideQuest
 }: HistoricalEraProps) => {
   const [selectedNPC, setSelectedNPC] = useState<NPC | null>(null);
-  
+  const [currentInvestigation, setCurrentInvestigation] = useState<Location | null>(null); // Added state for current investigation
+
   // Get NPCs for this time period
   const npcs = timePeriod.npcs || getNPCsForEra(timePeriod.id);
-  
+
   // Map the era ID to a CSS background class
   const eraBackgrounds: Record<string, string> = {
     egypt: 'bg-[url("https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1470&auto=format&fit=crop")]',
@@ -49,19 +43,19 @@ const HistoricalEra = ({
     medieval: 'bg-[url("https://images.unsplash.com/photo-1533154683836-84ea7a0bc310?q=80&w=1374&auto=format&fit=crop")]',
     industrial: 'bg-[url("https://images.unsplash.com/photo-1518982380512-5a3c6f0583e0?q=80&w=1470&auto=format&fit=crop")]',
   };
-  
+
   const backgroundClass = eraBackgrounds[timePeriod.id] || '';
-  
+
   // Handle NPC selection
   const handleNPCClick = (npc: NPC) => {
     setSelectedNPC(npc);
   };
-  
+
   // Close NPC dialog
   const handleCloseNPC = () => {
     setSelectedNPC(null);
   };
-  
+
   return (
     <div className={`flex-1 overflow-y-auto scrollbar-thin historical-bg bg-nexus-primary ${backgroundClass} bg-cover bg-center`}>
       <div className="min-h-full backdrop-blur-sm backdrop-brightness-50 p-4 md:p-6">
@@ -74,7 +68,7 @@ const HistoricalEra = ({
                 <p className="text-nexus-light text-sm">{timePeriod.shortDescription}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div>
                 <div className="text-xs text-nexus-light mb-1">Timeline Integrity</div>
@@ -88,7 +82,7 @@ const HistoricalEra = ({
                   <span className="text-xs font-mono text-nexus-cyan">{timePeriod.integrity}%</span>
                 </div>
               </div>
-              
+
               <button
                 onClick={onReturnToNexus}
                 className="px-3 py-1.5 border border-nexus-accent bg-nexus-primary hover:bg-nexus-secondary rounded-md text-sm flex items-center transition-colors"
@@ -98,7 +92,7 @@ const HistoricalEra = ({
               </button>
             </div>
           </div>
-          
+
           {/* Timeline Info and Quest */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="bg-nexus-primary/80 backdrop-blur-md rounded-lg p-5 border border-nexus-accent">
@@ -120,7 +114,7 @@ const HistoricalEra = ({
                     </div>
                   </div>
                 ))}
-                
+
                 {anomalies.length === 0 && (
                   <div className="p-3 bg-nexus-dark/50 rounded border border-nexus-accent/50">
                     <p className="text-sm text-nexus-light">No anomalies detected in this time period.</p>
@@ -128,7 +122,7 @@ const HistoricalEra = ({
                 )}
               </div>
             </div>
-            
+
             {/* Quest Display */}
             <QuestDisplay 
               quest={currentQuest} 
@@ -136,14 +130,14 @@ const HistoricalEra = ({
               playerSkills={playerSkills}
             />
           </div>
-          
+
           {/* Location Details */}
           <div className="bg-nexus-primary/80 backdrop-blur-md rounded-lg p-5 border border-nexus-accent mb-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
               <Map className="w-5 h-5 mr-2 text-nexus-yellow" />
               Location Details
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {locations.map(location => (
                 <div key={location.id} className="p-3 bg-nexus-dark/50 rounded border border-nexus-accent/50">
@@ -156,12 +150,12 @@ const HistoricalEra = ({
                   >
                     Investigate
                   </button>
-                  
+
                   {currentInvestigation?.id === location.id && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                       <div className="max-w-2xl w-full mx-4">
                         <InvestigationGame
-                          playerClass={playerClass}
+                          playerClass={'playerClass'} // Added playerClass prop (replace 'playerClass' with actual prop)
                           location={currentInvestigation}
                           onComplete={(success) => {
                             if (success) {
@@ -175,7 +169,7 @@ const HistoricalEra = ({
                   )}
                 </div>
               ))}
-              
+
               {locations.length === 0 && (
                 <div className="p-3 bg-nexus-dark/50 rounded border border-nexus-accent/50 col-span-3">
                   <p className="text-sm text-nexus-light">No notable locations found in this time period.</p>
@@ -183,14 +177,14 @@ const HistoricalEra = ({
               )}
             </div>
           </div>
-          
+
           {/* Historical NPCs */}
           <div className="bg-nexus-primary/80 backdrop-blur-md rounded-lg p-5 border border-nexus-accent mb-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
               <Users className="w-5 h-5 mr-2 text-nexus-yellow" />
               Historical Figures
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {npcs.map(npc => (
                 <div 
@@ -213,7 +207,7 @@ const HistoricalEra = ({
                   </div>
                 </div>
               ))}
-              
+
               {npcs.length === 0 && (
                 <div className="p-3 bg-nexus-dark/50 rounded border border-nexus-accent/50 col-span-full">
                   <p className="text-sm text-nexus-light">No historical figures available for interaction in this time period.</p>
@@ -221,7 +215,7 @@ const HistoricalEra = ({
               )}
             </div>
           </div>
-          
+
           {/* NPC Interaction Dialog */}
           {selectedNPC && (
             <NPCInteraction 
