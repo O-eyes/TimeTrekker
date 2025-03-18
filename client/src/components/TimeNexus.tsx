@@ -229,19 +229,19 @@ const initialLocations: Record<string, Location[]> = {
 };
 
 const TimeNexus = () => {
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [username, setUsername] = useState('');
+  // Login functionality temporarily disabled for development
+  // const [loggedIn, setLoggedIn] = useState(false);
+  // const [username, setUsername] = useState('');
   
-  // Handle login
-  const handleLogin = (username: string) => {
-    setUsername(username);
-    setLoggedIn(true);
-    addMessage(`Welcome, Temporal Agent ${username}!`, 'system');
-  };
+  // const handleLogin = (username: string) => {
+  //   setUsername(username);
+  //   setLoggedIn(true);
+  //   addMessage(`Welcome, Temporal Agent ${username}!`, 'system');
+  // };
 
-  if (!loggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
+  // if (!loggedIn) {
+  //   return <LoginPage onLogin={handleLogin} />;
+  // }
 
   // Main app state
   const [playerClass, setPlayerClass] = useState<PlayerClass>(null);

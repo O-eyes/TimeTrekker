@@ -19,6 +19,23 @@ interface HistoricalEraProps {
   onUnlockSideQuest?: (questId: string) => void;
 }
 
+// Placeholder ResourceGathering component
+const ResourceGathering = ({ eraId, availableResources, onGatherResource, playerEnergy }: any) => {
+  return (
+    <div>
+      <h2>{eraId} Resources</h2>
+      {availableResources.map(resource => (
+        <div key={resource.id}>
+          <p>{resource.name}: {resource.baseValue}</p>
+          <button onClick={() => onGatherResource(resource, 1)}>Gather</button>
+        </div>
+      ))}
+      <p>Player Energy: {playerEnergy}</p>
+    </div>
+  );
+};
+
+
 const HistoricalEra = ({ 
   timePeriod,
   currentQuest,
@@ -120,6 +137,23 @@ const HistoricalEra = ({
                     <p className="text-sm text-nexus-light">No anomalies detected in this time period.</p>
                   </div>
                 )}
+              </div>
+              {/* Resource Gathering Section */}
+              <div className="mt-6">
+                <h2 className="text-xl text-nexus-cyan mb-4">Resource Operations</h2>
+                <ResourceGathering
+                  eraId={timePeriod.id}
+                  onGatherResource={(resource, amount) => {
+                    // TODO: Implement resource gathering handler
+                    console.log(`Gathered ${amount} ${resource.name}`);
+                  }}
+                  availableResources={[
+                    // Example resources - replace with actual era-specific resources
+                    { id: 'temporal-energy', name: 'Temporal Energy', baseValue: 100 },
+                    { id: 'paradox-matter', name: 'Paradox Matter', baseValue: 150 },
+                  ]}
+                  playerEnergy={100} // TODO: Implement energy system
+                />
               </div>
             </div>
 
