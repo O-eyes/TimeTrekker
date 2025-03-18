@@ -49,7 +49,6 @@ const HistoricalEra = ({
   playerSkills,
   onCollectArtifact,
   onUnlockSideQuest,
-  playerClass, // Added playerClass prop
   addMessage // Added addMessage function
 }: HistoricalEraProps) => {
   const [selectedNPC, setSelectedNPC] = useState<NPC | null>(null);
