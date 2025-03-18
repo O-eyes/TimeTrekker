@@ -1,133 +1,64 @@
-
 import { useState } from 'react';
-import { Swords, Shield, Target } from 'lucide-react';
-
-interface CombatAction {
-  name: string;
-  energyCost: number;
-  damage: number;
-  accuracy: number;
-}
-
-interface Enemy {
-  name: string;
-  health: number;
-  maxHealth: number;
-  damage: number;
-  defense: number;
-}
+import { PlayerClass } from '@/types/game';
 
 interface CombatSystemProps {
-  playerClass: string;
+  playerClass: PlayerClass;
   playerLevel: number;
-  useEnergy: (amount: number) => boolean;
-  onVictory: () => void;
-  onDefeat: () => void;
+  onCombatEnd: (victory: boolean) => void;
 }
 
-const CombatSystem = ({ playerClass, playerLevel, useEnergy, onVictory, onDefeat }: CombatSystemProps) => {
-  const [enemy, setEnemy] = useState<Enemy>({
-    name: 'Temporal Anomaly',
-    health: 100,
-    maxHealth: 100,
-    damage: 15,
-    defense: 5
-  });
-
+export default function CombatSystem({ playerClass, playerLevel, onCombatEnd }: CombatSystemProps) {
   const [playerHealth, setPlayerHealth] = useState(100);
+  const [enemyHealth, setEnemyHealth] = useState(80);
   const [combatLog, setCombatLog] = useState<string[]>([]);
 
-  const actions: CombatAction[] = [
-    { name: 'Quick Strike', energyCost: 10, damage: 20, accuracy: 90 },
-    { name: 'Heavy Attack', energyCost: 25, damage: 40, accuracy: 75 },
-    { name: 'Temporal Blast', energyCost: 35, damage: 60, accuracy: 60 }
-  ];
+  const attack = () => {
+    // Player attacks
+    const playerDamage = Math.floor(Math.random() * 20) + 10;
+    setEnemyHealth(prev => Math.max(0, prev - playerDamage));
+    setCombatLog(prev => [...prev, `You deal ${playerDamage} damage!`]);
 
-  const performAction = (action: CombatAction) => {
-    if (!useEnergy(action.energyCost)) {
-      addToCombatLog('Not enough energy!');
-      return;
+    // Enemy attacks back
+    if (enemyHealth > 0) {
+      const enemyDamage = Math.floor(Math.random() * 15) + 5;
+      setPlayerHealth(prev => Math.max(0, prev - enemyDamage));
+      setCombatLog(prev => [...prev, `Enemy deals ${enemyDamage} damage!`]);
     }
 
-    // Calculate hit chance
-    const hit = Math.random() * 100 <= action.accuracy;
-    if (hit) {
-      const damage = Math.max(0, action.damage - enemy.defense);
-      setEnemy(prev => ({
-        ...prev,
-        health: Math.max(0, prev.health - damage)
-      }));
-      addToCombatLog(`You dealt ${damage} damage with ${action.name}!`);
-
-      if (enemy.health <= 0) {
-        onVictory();
-        return;
-      }
-    } else {
-      addToCombatLog(`${action.name} missed!`);
+    // Check combat end conditions
+    if (enemyHealth <= playerDamage) {
+      onCombatEnd(true);
+    } else if (playerHealth <= 0) {
+      onCombatEnd(false);
     }
-
-    // Enemy counterattack
-    const enemyDamage = Math.max(0, enemy.damage - (playerLevel * 2));
-    setPlayerHealth(prev => Math.max(0, prev - enemyDamage));
-    addToCombatLog(`Enemy dealt ${enemyDamage} damage!`);
-
-    if (playerHealth <= 0) {
-      onDefeat();
-    }
-  };
-
-  const addToCombatLog = (message: string) => {
-    setCombatLog(prev => [...prev.slice(-4), message]);
   };
 
   return (
-    <div className="bg-nexus-dark/90 p-4 rounded-lg">
-      <div className="grid grid-cols-2 gap-4 mb-4">
+    <div className="bg-nexus-dark p-4 rounded-lg">
+      <div className="flex justify-between mb-4">
         <div>
-          <h3 className="text-nexus-cyan mb-2">Player</h3>
-          <div className="w-full bg-nexus-dark rounded-full h-2 mb-1">
-            <div 
-              className="h-2 rounded-full bg-nexus-cyan"
-              style={{ width: `${(playerHealth / 100) * 100}%` }}
-            />
-          </div>
-          <span className="text-sm text-nexus-light">{playerHealth}/100</span>
+          <h3 className="text-nexus-cyan">Player HP: {playerHealth}</h3>
+          <p className="text-nexus-light">Class: {playerClass}</p>
         </div>
         <div>
-          <h3 className="text-nexus-yellow mb-2">{enemy.name}</h3>
-          <div className="w-full bg-nexus-dark rounded-full h-2 mb-1">
-            <div 
-              className="h-2 rounded-full bg-nexus-yellow"
-              style={{ width: `${(enemy.health / enemy.maxHealth) * 100}%` }}
-            />
-          </div>
-          <span className="text-sm text-nexus-light">{enemy.health}/{enemy.maxHealth}</span>
+          <h3 className="text-red-500">Enemy HP: {enemyHealth}</h3>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {actions.map(action => (
-          <button
-            key={action.name}
-            onClick={() => performAction(action)}
-            className="bg-nexus-primary hover:bg-nexus-accent p-2 rounded text-sm"
-          >
-            <div className="flex flex-col items-center">
-              <span>{action.name}</span>
-              <span className="text-nexus-light text-xs">Cost: {action.energyCost}</span>
-            </div>
-          </button>
-        ))}
+      <div className="space-y-2">
+        <button
+          onClick={attack}
+          className="w-full bg-nexus-accent hover:bg-nexus-accent/80 text-white py-2 rounded"
+        >
+          Attack
+        </button>
       </div>
 
-      <div className="bg-nexus-dark/60 p-2 rounded">
-        {combatLog.map((log, index) => (
-          <div key={index} className="text-sm text-nexus-light">{log}</div>
+      <div className="mt-4 h-32 overflow-y-auto bg-nexus-dark/50 p-2 rounded">
+        {combatLog.map((log, i) => (
+          <p key={i} className="text-sm text-nexus-light">{log}</p>
         ))}
       </div>
     </div>
   );
-};
-
-export default CombatSystem;
+}
